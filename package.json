@@ -1,0 +1,25 @@
+{
+	"name": "inat-discord",
+	"private": true,
+	"type": "module",
+	"packageManager": "pnpm@12.6.0",
+	"engines": {
+		"node": ">=24"
+	},
+	"scripts": {
+		"start": "node src/main.ts",
+		"dev": "node --env-file-if-exists=.env --watch src/main.ts",
+		"check": "biome check && tsc --noEmit",
+		"format": "biome format --write"
+	},
+	"dependencies": {
+		"discord.js": "^14.27.0",
+		"pg": "^8.23.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.14",
+		"@types/node": "^26.6.3",
+		"@types/pg": "^8.23.1",
+		"typescript": "^7.0.2"
+	}
+}
