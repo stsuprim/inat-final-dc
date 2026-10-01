@@ -1,36 +1,52 @@
 import {
 	type ButtonInteraction,
-	type ChatInputCommandInteraction,
+	type Client,
 	MessageFlags,
-	PermissionFlagsBits,
-	SlashCommandBuilder,
+	type Snowflake,
 } from "discord.js";
 import { ids } from "../config.ts";
 import { fill } from "../emoji.ts";
 import { supportPanel } from "../posts/support.ts";
 import { claim, findOpen, openTicket } from "../tickets.ts";
 
-export const data = new SlashCommandBuilder()
-	.setName("support")
-	.setDescription("Post the support panel in this channel")
-	.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+// The support channel holds exactly one thing: the bot's panel. It is posted
+// fresh on every start, and posted again if someone deletes it.
+let panelId: Snowflake | null = null;
 
-export async function run(interaction: ChatInputCommandInteraction<"cached">) {
-	if (interaction.channelId !== ids.supportChannel) {
-		return interaction.reply({
-			content: `Use this in <#${ids.supportChannel}>.`,
-			flags: MessageFlags.Ephemeral,
-		});
+export async function postPanel(client: Client) {
+	const channel = await client.channels
+		.fetch(ids.supportChannel)
+		.catch(() => null);
+	if (!channel?.isSendable() || channel.isDMBased()) {
+		console.error("Could not find the support channel.");
+		return;
 	}
 
-	await interaction.reply({
-		content: "Posting it now.",
-		flags: MessageFlags.Ephemeral,
-	});
-	await interaction.channel?.send({
-		...supportPanel(interaction.guild),
+	panelId = null;
+	const recent = await channel.messages.fetch({ limit: 50 });
+	for (const message of recent.values()) {
+		if (message.author.id === client.user?.id) {
+			await message.delete().catch(() => {});
+		}
+	}
+
+	const panel = await channel.send({
+		...supportPanel(channel.guild),
 		allowedMentions: { parse: [] },
 	});
+	panelId = panel.id;
+}
+
+export function panelGone(client: Client, deleted: Iterable<Snowflake>) {
+	if (!panelId) return;
+	for (const id of deleted) {
+		if (id === panelId) {
+			postPanel(client).catch((error) => {
+				console.error("Could not repost the support panel:", error);
+			});
+			return;
+		}
+	}
 }
 
 /** The panel's button. One open ticket per person. */

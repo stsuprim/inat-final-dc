@@ -9,11 +9,10 @@ The bot for the INAT Discord server. It handles applications, support tickets, a
 | `/apply email` | anyone in the apply channel | Opens a private application channel. One per person. |
 | `/approve` | admins, inside an application | Adds the email to inat.gg, gives the clipper role, takes the join role off, then closes the channel. |
 | `/close` | admins, inside a ticket | Closes an application or support channel. |
-| `/support` | admins, in the support channel | Posts the "Open a ticket" panel. One open ticket per person. |
-| `/info` `/tool` `/announce` | admins | Post fixed copy from `src/posts`. |
+| `/announce` | admins | Posts the announcement from `src/posts/announce.ts`. |
 | `/clear amount` | Manage Messages | Bulk delete. `-1` recreates the channel. |
 
-On every start the bot locks the apply and support channels so nobody can type in them. The clipper role also loses `/apply` in the apply channel.
+On every start the bot makes info, announcement, tools, apply and support read only. Every rank loses `/apply`. It also reposts the support panel, and posts it again if someone deletes it.
 
 ## Variables
 

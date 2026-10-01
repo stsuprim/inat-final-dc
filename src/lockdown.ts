@@ -4,6 +4,7 @@ import {
 	type Message,
 	OverwriteType,
 	type PermissionOverwriteOptions,
+	PermissionOverwrites,
 } from "discord.js";
 import { ids, rankRoles, roles } from "./config.ts";
 
@@ -58,37 +59,60 @@ async function lock(
 	}
 	const overwrites = channel.permissionOverwrites;
 
-	await overwrites.edit(channel.guild.roles.everyone, rules, { reason });
+	// Discord rate limits overwrite edits hard, so only write what changed.
+	async function set(
+		target: string,
+		options: PermissionOverwriteOptions,
+		type: OverwriteType,
+	) {
+		const current = overwrites.cache.get(target);
+		const next = PermissionOverwrites.resolveOverwriteOptions(
+			options,
+			current ?? {},
+		);
+		if (
+			current &&
+			current.allow.bitfield === next.allow.bitfield &&
+			current.deny.bitfield === next.deny.bitfield
+		) {
+			return;
+		}
+		await overwrites.edit(target, options, { reason, type });
+	}
+
+	const everyone = channel.guild.id;
+	await set(everyone, rules, OverwriteType.Role);
 	for (const [role, own] of Object.entries(forRole)) {
-		await overwrites.edit(role, own, { reason });
+		await set(role, own, OverwriteType.Role);
 	}
 
 	// A role allow beats an @everyone deny, so any role already written on the
 	// channel gets the same rules. Admins skip overwrites anyway.
-	for (const overwrite of overwrites.cache.values()) {
+	for (const overwrite of [...overwrites.cache.values()]) {
 		if (
 			overwrite.type === OverwriteType.Role &&
-			overwrite.id !== channel.guild.id &&
+			overwrite.id !== everyone &&
 			overwrite.id !== roles.admin &&
 			!(overwrite.id in forRole)
 		) {
-			await overwrites.edit(overwrite.id, rules, { reason });
+			await set(overwrite.id, rules, OverwriteType.Role);
 		}
 	}
 
 	// People the old bot muted and forgot about when it restarted.
-	for (const overwrite of overwrites.cache.values()) {
+	for (const overwrite of [...overwrites.cache.values()]) {
 		if (overwrite.type === OverwriteType.Member && overwrite.id !== me.id) {
 			await overwrite.delete("Old mute").catch(() => {});
 		}
 	}
 
 	// The bot itself still has to post the panels and logs.
-	await overwrites.edit(
+	await set(
 		me.id,
 		{ ViewChannel: true, SendMessages: true, EmbedLinks: true },
-		{ reason },
+		OverwriteType.Member,
 	);
+	console.log(`Locked #${channel.name}.`);
 }
 
 /** Written on every start, so a hand edit in Discord cannot quietly undo it. */

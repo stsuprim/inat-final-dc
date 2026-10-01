@@ -9,11 +9,11 @@ import {
 	REST,
 	Routes,
 } from "discord.js";
+import { announce } from "./commands/announce.ts";
 import * as apply from "./commands/apply.ts";
 import * as approve from "./commands/approve.ts";
 import * as clear from "./commands/clear.ts";
 import * as close from "./commands/close.ts";
-import { announce, info, tool } from "./commands/posts.ts";
 import * as support from "./commands/support.ts";
 import { env, ids } from "./config.ts";
 import { pool } from "./db.ts";
@@ -26,9 +26,10 @@ type Command = {
 };
 
 const commands = new Map<string, Command>(
-	[apply, approve, close, clear, support, info, tool, announce].map(
-		(command) => [command.data.name, command],
-	),
+	[apply, approve, close, clear, announce].map((command) => [
+		command.data.name,
+		command,
+	]),
 );
 
 const client = new Client({
@@ -86,6 +87,11 @@ client.once(Events.ClientReady, async (ready) => {
 		);
 	});
 
+	await support.postPanel(ready).catch((error: Error) => {
+		console.error("Could not post the support panel:", error);
+		notes.push(`Could not post the support panel: ${error.message}`);
+	});
+
 	const status = await ready.channels
 		.fetch(ids.statusChannel)
 		.catch(() => null);
@@ -109,6 +115,18 @@ client.on(Events.GuildMemberAdd, async (member) => {
 });
 
 client.on(Events.MessageCreate, sweep);
+client.on(Events.MessageDelete, (message) => {
+	support.panelGone(client, [message.id]);
+});
+client.on(Events.MessageBulkDelete, (messages) => {
+	support.panelGone(client, messages.keys());
+});
+
+client.rest.on("rateLimited", (info) => {
+	console.warn(
+		`Rate limited on ${info.method} ${info.route} for ${info.retryAfter}ms.`,
+	);
+});
 
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (!interaction.inCachedGuild()) return;
