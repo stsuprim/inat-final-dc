@@ -5,8 +5,9 @@ import {
 	PermissionFlagsBits,
 	SlashCommandBuilder,
 } from "discord.js";
-import { ids, rankRoles } from "../config.ts";
+import { ids } from "../config.ts";
 import { approveEmail } from "../db.ts";
+import { syncMember } from "../ranks.ts";
 import { closeSoon, readTopic } from "../tickets.ts";
 
 export const data = new SlashCommandBuilder()
@@ -39,7 +40,7 @@ export async function run(interaction: ChatInputCommandInteraction<"cached">) {
 
 	let added: boolean;
 	try {
-		added = await approveEmail(ticket.email);
+		added = await approveEmail(ticket.email, ticket.userId);
 	} catch (error) {
 		console.error("Could not approve email:", error);
 		return interaction.editReply(
@@ -57,23 +58,14 @@ export async function run(interaction: ChatInputCommandInteraction<"cached">) {
 		// The email still counts. They can get the role when they come back.
 		roleNote = "They have left the server, so no role was given.";
 	} else {
+		// Their rank comes from their level on the site, so someone who was
+		// already clipping lands straight on Silver or above.
 		try {
-			if (rankRoles.some((rank) => member.roles.cache.has(rank))) {
-				roleNote = "They already have a rank.";
-			} else {
-				await member.roles.add(ids.clipperRole, why);
-				roleNote = "Role given.";
-			}
+			await syncMember(member);
+			roleNote = "Rank given.";
 		} catch (error) {
-			console.error("Could not give the clipper role:", error);
-			roleNote = "I could not give them the role.";
-		}
-
-		if (member.roles.cache.has(ids.joinRole)) {
-			await member.roles.remove(ids.joinRole, why).catch((error) => {
-				console.error("Could not take the join role off:", error);
-				roleNote += " I could not take the join role off.";
-			});
+			console.error("Could not give the rank:", error);
+			roleNote = "I could not give them their rank.";
 		}
 	}
 

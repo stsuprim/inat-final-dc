@@ -33,7 +33,7 @@ export const roles = {
 	editor: "1552705591804170360",
 	// Everyone lands with this one and keeps it until they are approved.
 	unverified: "1547527812443803688",
-	// The five ranks, lowest first. /approve hands out Bronze.
+	// The five ranks, lowest first. They follow site levels (src/ranks.ts).
 	bronze: "1547238027233988608",
 	silver: "1554460740994338976",
 	gold: "1554460735633891338",
@@ -55,7 +55,6 @@ export const rankRoles = [
 export const ids = {
 	adminRole: roles.admin,
 	joinRole: roles.unverified,
-	clipperRole: roles.bronze,
 
 	infoChannel: "1547298862639743197",
 	announcementChannel: "1547270442752938085",

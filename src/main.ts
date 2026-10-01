@@ -14,11 +14,13 @@ import * as apply from "./commands/apply.ts";
 import * as approve from "./commands/approve.ts";
 import * as clear from "./commands/clear.ts";
 import * as close from "./commands/close.ts";
+import * as rank from "./commands/rank.ts";
 import * as support from "./commands/support.ts";
 import { env, ids } from "./config.ts";
 import { pool } from "./db.ts";
 import { lockDoors, sweep } from "./lockdown.ts";
 import { SUPPORT_BUTTON } from "./posts/support.ts";
+import { startRankSync } from "./ranks.ts";
 
 type Command = {
 	data: { name: string; toJSON(): unknown };
@@ -26,7 +28,7 @@ type Command = {
 };
 
 const commands = new Map<string, Command>(
-	[apply, approve, close, clear, announce].map((command) => [
+	[apply, approve, close, clear, announce, rank].map((command) => [
 		command.data.name,
 		command,
 	]),
@@ -90,6 +92,10 @@ client.once(Events.ClientReady, async (ready) => {
 	await support.postPanel(ready).catch((error: Error) => {
 		console.error("Could not post the support panel:", error);
 		notes.push(`Could not post the support panel: ${error.message}`);
+	});
+
+	await startRankSync(ready).catch((error: Error) => {
+		notes.push(`Rank sync failed: ${error.message}`);
 	});
 
 	const status = await ready.channels
