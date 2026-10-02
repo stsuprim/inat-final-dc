@@ -65,8 +65,8 @@ Both share one Postgres.
 | `src/commands/*` | `apply`, `approve`, `rank`, `close`, `clear`, `announce`, support button + panel. |
 | `src/posts/*` | Copy the bot posts (support panel, announcement). |
 
-**On every start, in order:** register commands → lock channels → delete old
-support panel and post a fresh one → rank sync (then every 2 min) → post "the bot is back up" (pings Admin) in
+**On every start, in order:** register commands → lock channels → post the
+support panel only if it is missing → rank sync (then every 2 min) → post "the bot is back up" (pings Admin) in
 the team channel, with any problems listed.
 
 ---
@@ -96,8 +96,8 @@ the team channel, with any problems listed.
 - `/rank [user]`: level, XP bar, clips to next level and next rank.
 
 **Support** (`#🎫・support`)
-- Read-only; only the bot's button. The panel is reposted on every start and
-  again instantly if someone deletes it.
+- Read-only; only the bot's button. On start the panel already there is kept
+  (only posted if missing); it is posted again instantly if someone deletes it.
 - Button opens a private channel in the Support category. One per person —
   a second click says "You already have a ticket open in #…".
 - Topic: `support:<userId>`. `/close` (staff) closes either kind of ticket.

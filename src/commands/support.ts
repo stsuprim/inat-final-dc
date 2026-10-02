@@ -22,12 +22,18 @@ export async function postPanel(client: Client) {
 		return;
 	}
 
+	// The panel already there stays: only post when there is none. Any extra
+	// copies from older runs go, keeping the newest.
 	panelId = null;
 	const recent = await channel.messages.fetch({ limit: 50 });
-	for (const message of recent.values()) {
-		if (message.author.id === client.user?.id) {
-			await message.delete().catch(() => {});
-		}
+	const mine = [...recent.values()]
+		.filter((message) => message.author.id === client.user?.id)
+		.sort((x, y) => y.createdTimestamp - x.createdTimestamp);
+	const [keep, ...extra] = mine;
+	for (const message of extra) await message.delete().catch(() => {});
+	if (keep) {
+		panelId = keep.id;
+		return;
 	}
 
 	const panel = await channel.send({
