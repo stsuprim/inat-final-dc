@@ -31,9 +31,13 @@ export async function run(interaction: ChatInputCommandInteraction<"cached">) {
 		return say(`Use this in <#${ids.applyChannel}>.`);
 	}
 
-	// The channel already hides /apply from them; this covers anyone who
-	// slips past it, like an admin who also holds the role.
-	if (rankRoles.some((rank) => member.roles.cache.has(rank))) {
+	// Anyone still Unverified can apply, whatever other roles they hold. The
+	// rest with a rank are already approved; the channel hides /apply from
+	// them, and this covers anyone who slips past it.
+	if (
+		!member.roles.cache.has(ids.joinRole) &&
+		rankRoles.some((rank) => member.roles.cache.has(rank))
+	) {
 		return say(
 			":check: You are already approved, so there is nothing to apply for. Sign in at <https://inat.gg> with your email.",
 		);
