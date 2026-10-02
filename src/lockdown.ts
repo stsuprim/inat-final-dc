@@ -128,10 +128,12 @@ export async function lockDoors(client: Client) {
 
 	// Every rank is an approved clipper, done with /apply for good. Unverified
 	// always can, whatever else they hold (Editor, Marketer, an old rank): a
-	// role allow beats a role deny in Discord.
+	// role allow beats a role deny in Discord. They need Send Messages too,
+	// or Discord hides the box /apply is typed in; anything they type that is
+	// not /apply is deleted by sweep().
 	await lock(client, ids.applyChannel, applyOnly, {
 		...Object.fromEntries(rankRoles.map((rank) => [rank, readOnly])),
-		[roles.unverified]: applyOnly,
+		[roles.unverified]: { ...applyOnly, SendMessages: true },
 	});
 }
 
